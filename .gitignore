@@ -1,0 +1,30 @@
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.DS_Store
+
+# Dependency directories
+node_modules/
+
+# Build outputs
+dist/
+dist-ssr/
+build/ # If you use a custom build directory name
+
+# Local configuration and editor files
+.env
+.env.*.local # Ignore all local environment files
+.vscode/ # VS Code specific settings
+!.vscode/extensions.json # But keep extensions.json if desired
+.idea/ # IntelliJ IDEA specific settings
+.DS_Store # macOS specific
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw? # Vim swap files
