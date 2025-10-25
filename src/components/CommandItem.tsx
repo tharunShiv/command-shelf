@@ -1,6 +1,8 @@
-import { Command } from "../data/commands";
+import { Command } from "../data/Command";
 import { highlightMatch } from "../utils/search";
 import { Terminal, Copy, Clock } from "lucide-react";
+
+type CommandWithSyntax = Command & { primarySyntax: string };
 
 interface CommandItemProps {
   command: Command;
@@ -47,12 +49,14 @@ export function CommandItem({
               {highlightMatch(command.name, query)}
             </code>
             <span className="text-xs text-muted-foreground px-2 py-0.5 bg-muted rounded">
-              {command.category}
+              {/* 💡 NEW: Show the platform which is a new field */}
+              {command.platform} / {command.category}
             </span>
           </div>
 
           <code className="block text-xs font-mono text-foreground/80 mb-2 break-all">
-            {highlightMatch(command.syntax, query)}
+            {/* 💡 CHANGE: Use the new primarySyntax field */}
+            {highlightMatch(command.primarySyntax, query)}
           </code>
 
           <p className="text-sm text-muted-foreground line-clamp-2">

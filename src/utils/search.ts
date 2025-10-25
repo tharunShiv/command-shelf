@@ -1,9 +1,13 @@
-import { Command } from "../data/commands";
+import { Command } from "../data/Command";
 import React from "react";
 
 export interface SearchResult extends Command {
   score: number;
-  matchType: "name" | "tag" | "description";
+  matchType: "name" | "tag" | "description" | "platform"; // Added 'platform' to search type
+
+  // NOTE: We temporarily include the primary syntax here for easier use in CommandItem
+  // This will hold the syntax string from the primary variation.
+  primarySyntax: string;
 }
 
 /**
@@ -26,7 +30,12 @@ export function searchCommands(
 
   for (const command of commands) {
     let score = 0;
-    let matchType: "name" | "tag" | "description" = "description";
+    let matchType: SearchResult["matchType"] = "description";
+
+    // 💡 NEW: Get the primary syntax to search against
+    const primaryVariation =
+      command.variations.find((v) => v.isPrimary) || command.variations[0];
+    const primarySyntax = primaryVariation?.syntax || "";
 
     // Check command name (highest priority)
     if (command.name.toLowerCase().includes(normalizedQuery)) {
@@ -44,6 +53,13 @@ export function searchCommands(
       }
     }
 
+    if (command.platform.toLowerCase().includes(normalizedQuery)) {
+      score += 80;
+      if (matchType === "description") {
+        matchType = "platform";
+      }
+    }
+
     // Check tags/arguments (medium priority)
     const tagMatch = command.tags.some((tag) =>
       tag.toLowerCase().includes(normalizedQuery)
@@ -57,7 +73,7 @@ export function searchCommands(
     }
 
     // Check syntax for argument matches
-    if (command.syntax.toLowerCase().includes(normalizedQuery)) {
+    if (primarySyntax.toLowerCase().includes(normalizedQuery)) {
       score += 40;
       if (matchType === "description") {
         matchType = "tag";
@@ -70,14 +86,17 @@ export function searchCommands(
     }
 
     // Check description (lowest priority)
-    if (command.description.toLowerCase().includes(normalizedQuery)) {
+    if (command.description?.toLowerCase()?.includes(normalizedQuery)) {
       score += 25;
     }
 
     // Check examples
-    const exampleMatch = command.examples.some((example) =>
-      example.toLowerCase().includes(normalizedQuery)
-    );
+    const exampleMatch =
+      command.examples && Array.isArray(command.examples)
+        ? command.examples.some((example) =>
+            example.toLowerCase().includes(normalizedQuery)
+          )
+        : false;
     if (exampleMatch) {
       score += 20;
     }
@@ -91,10 +110,14 @@ export function searchCommands(
 
     // Only include results with matches
     if (score > 0) {
+      console.log(
+        `Search: ✅ MATCH found for ${command.name} with score ${score}`
+      );
       results.push({
         ...command,
         score,
         matchType,
+        primarySyntax,
       });
     }
   }
@@ -107,6 +130,10 @@ export function searchCommands(
  * Highlight matching text in a string
  */
 export function highlightMatch(text: string, query: string): React.ReactNode {
+  if (!text) {
+    return "";
+  }
+
   if (!query.trim()) {
     return text;
   }

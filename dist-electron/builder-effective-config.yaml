@@ -1,0 +1,23 @@
+directories:
+  output: dist-electron
+  buildResources: build
+appId: com.commandhelper.app
+productName: Command Helper
+files:
+  - filter:
+      - dist/**/*
+      - electron/*.js
+      - electron/trayTemplate.png
+asarUnpack:
+  - '**/node_modules/sqlite3/**/*'
+nodeGypRebuild: true
+extraMetadata:
+  main: electron/main.js
+extraResources:
+  - filter:
+      - commands.sqlite
+mac:
+  category: public.app-category.productivity
+  target:
+    - dmg
+electronVersion: 31.7.7

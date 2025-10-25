@@ -28,3 +28,4 @@ build/ # If you use a custom build directory name
 *.njsproj
 *.sln
 *.sw? # Vim swap files
+venv-custom/
