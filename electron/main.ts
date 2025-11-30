@@ -363,7 +363,6 @@ function createTray() {
   console.log("Tray created and tooltip set.");
 
   const contextMenu = Menu.buildFromTemplate([
-    { label: "Show Main App", click: () => mainWindow?.show() },
     { label: "Toggle Command Palette", click: () => togglePopup() },
     { type: "separator" },
     { label: "Quit", role: "quit" },

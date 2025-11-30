@@ -87,7 +87,8 @@
     "files": [
       "dist/**/*",
       "electron/*.js",
-      "electron/trayTemplate.png"
+      "electron/trayTemplate.png",
+      "electron/trayTemplate@2x.png"
     ],
     "asarUnpack": [
       "**/node_modules/better-sqlite3/**/*"
