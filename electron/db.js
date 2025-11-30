@@ -33,20 +33,18 @@ __export(db_exports, {
   updateCommands: () => updateCommands
 });
 module.exports = __toCommonJS(db_exports);
-var sqlite3 = __toESM(require("sqlite3"));
-var import_sqlite = require("sqlite");
+var import_better_sqlite3 = __toESM(require("better-sqlite3"));
 var import_path = require("path");
+var import_electron = require("electron");
 let db;
 let localDataVersion = 0;
 async function initDb() {
-  const dbPath = (0, import_path.join)(process.cwd(), "commands.sqlite");
+  const dbPath = import_electron.app.isPackaged ? (0, import_path.join)(process.resourcesPath, "commands.sqlite") : (0, import_path.join)(process.cwd(), "commands.sqlite");
   console.log(`DB: Initializing SQLite database at: ${dbPath}`);
   try {
-    db = await (0, import_sqlite.open)({
-      filename: dbPath,
-      driver: sqlite3.Database
-    });
-    await db.exec(`
+    db = new import_better_sqlite3.default(dbPath);
+    db.pragma("journal_mode = WAL");
+    db.exec(`
       CREATE TABLE IF NOT EXISTS commands (
         id TEXT PRIMARY KEY,
         name TEXT,
@@ -57,9 +55,7 @@ async function initDb() {
         version INTEGER
       );
     `);
-    const result = await db.get(
-      "SELECT MAX(version) as maxVersion FROM commands"
-    );
+    const result = db.prepare("SELECT MAX(version) as maxVersion FROM commands").get();
     localDataVersion = result?.maxVersion || 0;
     console.log(
       `DB: Initialization complete. Local data version: ${localDataVersion}`
@@ -72,33 +68,32 @@ async function initDb() {
 async function updateCommands(newCommands) {
   console.log(`DB: Starting update for ${newCommands.length} commands.`);
   if (newCommands.length === 0) return;
-  await db.exec("BEGIN TRANSACTION");
   try {
-    const stmt = await db.prepare(`
+    const insert = db.prepare(`
       REPLACE INTO commands (id, name, platform, category, tags, variations_json, version) 
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
     `);
-    for (const cmd of newCommands) {
-      const variationsJson = JSON.stringify(cmd.variations || []);
-      const tagsString = Array.isArray(cmd.tags) ? cmd.tags.join(",") : cmd.tags || "";
-      await stmt.run(
-        cmd.id,
-        cmd.name,
-        cmd.platform,
-        cmd.category,
-        tagsString,
-        variationsJson,
-        cmd.version || 1
-        // Ensure a version is set
-      );
-    }
-    await stmt.finalize();
-    await db.exec("COMMIT");
+    const insertMany = db.transaction((commands) => {
+      for (const cmd of commands) {
+        const variationsJson = JSON.stringify(cmd.variations || []);
+        const tagsString = Array.isArray(cmd.tags) ? cmd.tags.join(",") : cmd.tags || "";
+        insert.run(
+          cmd.id,
+          cmd.name,
+          cmd.platform,
+          cmd.category,
+          tagsString,
+          variationsJson,
+          cmd.version || 1
+          // Ensure a version is set
+        );
+      }
+    });
+    insertMany(newCommands);
     localDataVersion = Math.max(...newCommands.map((c) => c.version || 1));
     console.log(`DB: Update complete. New local version: ${localDataVersion}`);
   } catch (error) {
-    await db.exec("ROLLBACK");
-    console.error("DB: Command update failed, rolled back transaction:", error);
+    console.error("DB: Command update failed:", error);
     throw error;
   }
 }
@@ -106,7 +101,7 @@ async function getAllCommands() {
   if (!db) {
     await initDb();
   }
-  const rows = await db.all("SELECT * FROM commands");
+  const rows = db.prepare("SELECT * FROM commands").all();
   console.log(`DB: Found ${rows.length} rows for getAllCommands.`);
   return rows.map((row) => ({
     id: row.id,

@@ -6,7 +6,7 @@ export default defineConfig({
   base: "./",
   plugins: [
     react({
-      jsxRuntime: "classic",
+      jsxRuntime: "automatic",
     }),
   ],
   resolve: {

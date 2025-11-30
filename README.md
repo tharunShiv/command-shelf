@@ -11,3 +11,7 @@ Run `npm run dev` to start Vite and Electron together. The main window launches 
 ## Build macOS app
 
 Run `npm run dist` to package a macOS DMG using electron-builder.
+
+## Clean
+
+`rm -rf node_modules dist electron/*.js && npm cache clean --force`
