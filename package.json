@@ -30,6 +30,7 @@
     "@radix-ui/react-toggle": "^1.1.2",
     "@radix-ui/react-toggle-group": "^1.1.2",
     "@radix-ui/react-tooltip": "^1.1.8",
+    "better-sqlite3": "^11.10.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "*",
     "cmdk": "^1.1.1",
@@ -37,6 +38,7 @@
     "input-otp": "^1.4.2",
     "lucide-react": "^0.487.0",
     "next-themes": "^0.4.6",
+    "node-gyp": "^11.5.0",
     "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
     "react-dom": "^18.3.1",
@@ -49,7 +51,9 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.15",
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^20.10.0",
+    "@vitejs/plugin-react": "^5.1.0",
     "@vitejs/plugin-react-swc": "^3.10.2",
     "autoprefixer": "^10.4.21",
     "concurrently": "^9.1.0",
@@ -64,21 +68,36 @@
   "scripts": {
     "dev:main": "esbuild electron/main.ts --platform=node --format=cjs --outfile=electron/main.js --watch",
     "dev:preload": "esbuild electron/preload.ts --platform=node --format=cjs --outfile=electron/preload.js --watch",
-    "dev": "concurrently -k \"npm:dev:main\" \"npm:dev:preload\" \"vite\" \"wait-on http://localhost:5173 file:electron/main.js file:electron/preload.js && VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
+    "dev:db": "esbuild electron/db.ts --platform=node --format=cjs --outfile=electron/db.js --watch",
+    "dev": "concurrently -k \"npm:dev:main\" \"npm:dev:preload\" \"npm:dev:db\" \"vite\" \"wait-on http://localhost:5173 file:electron/main.js file:electron/preload.js file:electron/db.js && VITE_DEV_SERVER_URL=http://localhost:5173 electron .\"",
     "build:renderer": "vite build",
     "build:main": "esbuild electron/main.ts --platform=node --format=cjs --outfile=electron/main.js",
     "build:preload": "esbuild electron/preload.ts --platform=node --format=cjs --outfile=electron/preload.js",
-    "build": "npm run build:renderer && npm run build:main && npm run build:preload",
+    "build:db": "esbuild electron/db.ts --platform=node --format=cjs --outfile=electron/db.js",
+    "build": "npm run build:renderer && npm run build:main && npm run build:preload && npm run build:db",
     "start": "npm run build && electron .",
     "dist": "npm run build && electron-builder --mac dmg"
   },
   "build": {
     "appId": "com.commandhelper.app",
     "productName": "Command Helper",
+    "directories": {
+      "output": "dist-electron"
+    },
     "files": [
       "dist/**/*",
       "electron/*.js",
       "electron/trayTemplate.png"
+    ],
+    "asarUnpack": [
+      "**/node_modules/better-sqlite3/**/*"
+    ],
+    "nodeGypRebuild": false,
+    "extraMetadata": {
+      "main": "electron/main.js"
+    },
+    "extraResources": [
+      "commands.sqlite"
     ],
     "mac": {
       "category": "public.app-category.productivity",

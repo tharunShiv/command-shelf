@@ -1,12 +1,14 @@
+// src/components/CommandPallete.tsx
 import React, { useState, useEffect, useMemo } from "react";
-import { Search, X, Zap } from "lucide-react";
-import { commands, Command } from "../data/commands";
-import { searchCommands } from "../utils/search";
+import { Search, X, Zap, Loader2 } from "lucide-react"; // 💡 Added Loader2 here
+import { Command } from "../data/Command";
+import { searchCommands, SearchResult } from "../utils/search";
 import { copyCommandToClipboard } from "../utils/clipboard";
 import { CommandList } from "./CommandList";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
+import { useCommands } from "../hooks/useCommands";
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -17,6 +19,8 @@ interface CommandPaletteProps {
   isOverlay?: boolean; // New prop
 }
 
+type SelectableCommand = Command | SearchResult;
+
 export function CommandPalette({
   isOpen,
   onClose,
@@ -26,26 +30,65 @@ export function CommandPalette({
   isOverlay,
 }: CommandPaletteProps) {
   console.log(`CommandPalette - isOverlay: ${isOverlay}`);
+  // Get data from the hook
+  const { commands, isLoading, error } = useCommands();
+
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
 
+  const allCommands = useMemo(() => commands, [commands]);
+
   // Get recent commands
   const recentCommands = useMemo(() => {
-    return recentCommandIds
-      .map((id) => commands.find((cmd) => cmd.id === id))
-      .filter((cmd): cmd is Command => cmd !== undefined)
-      .slice(0, 5);
-  }, [recentCommandIds]);
+    return (
+      recentCommandIds
+        // 💡 CHANGE: We map over the full 'allCommands' array now
+        .map((id) => allCommands.find((cmd) => cmd.id === id))
+        // 💡 NEW: We must derive the primarySyntax to use it in CommandItem/clipboard
+        .filter((cmd): cmd is Command => cmd !== undefined)
+        .map((cmd) => {
+          const primaryVariant =
+            cmd.variations.find((v) => v.isPrimary) || cmd.variations[0];
+          return {
+            ...cmd,
+            primarySyntax: primaryVariant?.syntax || "",
+          } as Command & { primarySyntax: string }; // Cast for typing
+        })
+        .slice(0, 5)
+    );
+  }, [recentCommandIds, allCommands]); // Depend on allCommands now
 
   // Search results
-  const searchResults = useMemo(() => {
-    if (!query.trim()) {
+  const searchResults: SearchResult[] = useMemo(() => {
+    // 💡 DEBUG LOG 3: Check search parameters and overall command list size
+    console.log(
+      `CommandPalette: Calculating search results. Query: '${query}', All Commands: ${allCommands.length}`
+    );
+
+    if (!query.trim() || isLoading) {
       return [];
     }
-    return searchCommands(commands, query, recentCommandIds).slice(0, 10);
-  }, [query, recentCommandIds]);
+    const results = searchCommands(allCommands, query, recentCommandIds).slice(
+      0,
+      10
+    );
+
+    // 💡 DEBUG LOG 4: Check the final number of search results
+    console.log(
+      `CommandPalette: Found ${results.length} search results for query '${query}'.`
+    );
+    // 💡 DEBUG LOG 5: Log the top result's score
+    if (results.length > 0) {
+      console.log(
+        `CommandPalette: Top result score: ${results[0].score}, Name: ${results[0].name}`
+      );
+    }
+
+    return results;
+  }, [query, recentCommandIds, allCommands, isLoading]);
 
   // Display list: search results or recent commands
+  // 💡 CHANGE: The combined list must match the type of searchResults (Command & { primarySyntax: string })
   const displayCommands = query.trim() ? searchResults : recentCommands;
 
   // Reset selected index when results change
@@ -62,9 +105,17 @@ export function CommandPalette({
   }, [isOpen]);
 
   // Handle command selection
-  const handleSelectCommand = async (command: Command) => {
+  const handleSelectCommand = async (command: SelectableCommand) => {
+    // 💡 CHANGE: Get the syntax from the 'primarySyntax' field which is available
+    // on both SearchResult and the mapped recentCommands array.
+    const syntaxToCopy =
+      "primarySyntax" in command
+        ? command.primarySyntax
+        : (command.variations.find((v) => v.isPrimary) || command.variations[0])
+            ?.syntax || command.name;
+
     try {
-      await copyCommandToClipboard(command.syntax, command.name);
+      await copyCommandToClipboard(syntaxToCopy, command.name);
       onCommandUsed(command.id);
       toast.success("Command copied to clipboard!", {
         description: `${command.name} - Ready to paste`,
@@ -109,6 +160,33 @@ export function CommandPalette({
     return null;
   }
 
+  const renderLoadingOrError = () => {
+    if (isLoading) {
+      return (
+        <div className="px-4 py-12 text-center custom-height-results">
+          <Loader2 className="w-8 h-8 text-primary mx-auto mb-3 animate-spin" />
+          <p className="text-muted-foreground">Loading commands...</p>
+          <p className="text-sm text-muted-foreground/70 mt-1">
+            Fetching data from the server.
+          </p>
+        </div>
+      );
+    }
+    if (error) {
+      return (
+        <div className="px-4 py-12 text-center custom-height-results">
+          <X className="w-8 h-8 text-destructive mx-auto mb-3" />
+          <p className="text-muted-foreground">Error Loading Data</p>
+          <p className="text-sm text-destructive/70 mt-1">{error}</p>
+          <p className="text-xs text-muted-foreground/50 mt-2">
+            The app will use available local data if possible.
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
+
   return (
     <div
       className={
@@ -127,6 +205,7 @@ export function CommandPalette({
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
+        {/* ... (Header content is unchanged) ... */}
         <div className={isOverlay ? "border-b border-border" : ""}>
           <div
             className={
@@ -193,46 +272,50 @@ export function CommandPalette({
             </div>
           </div>
         </div>
-
         {/* Results */}
-        {displayCommands.length > 0 ? (
-          <CommandList
-            commands={displayCommands}
-            query={query}
-            selectedIndex={selectedIndex}
-            recentCommandIds={recentCommandIds}
-            onSelect={handleSelectCommand}
-            onHover={setSelectedIndex}
-            className={isOverlay ? "" : "flex-1"}
-          />
-        ) : (
-          <div
-            className={
-              isOverlay
-                ? "px-4 py-12 text-center custom-height-results"
-                : "flex-1 text-center"
-            }
-          >
-            {query.trim() ? (
-              <>
-                <Search className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-30" />
-                <p className="text-muted-foreground">No commands found</p>
-                <p className="text-sm text-muted-foreground/70 mt-1">
-                  Try searching for "grep", "docker", "ssh", or "tcpdump"
-                </p>
-              </>
-            ) : (
-              <>
-                <Zap className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-30" />
-                <p className="text-muted-foreground">No recent commands</p>
-                <p className="text-sm text-muted-foreground/70 mt-1">
-                  Start typing to search for Linux commands
-                </p>
-              </>
-            )}
-          </div>
-        )}
-
+        {renderLoadingOrError() || // 💡 FIX IS HERE
+          (displayCommands.length > 0 ? (
+            // 💡 CHANGE: Pass the combined search/recent array
+            <CommandList
+              commands={
+                displayCommands as (Command & { primarySyntax: string })[]
+              }
+              query={query}
+              selectedIndex={selectedIndex}
+              recentCommandIds={recentCommandIds}
+              // 💡 CHANGE: Select must handle the new SearchResult type
+              onSelect={handleSelectCommand}
+              onHover={setSelectedIndex}
+              className={isOverlay ? "" : "flex-1"}
+            />
+          ) : (
+            <div
+              className={
+                isOverlay
+                  ? "px-4 py-12 text-center custom-height-results"
+                  : "flex-1 text-center"
+              }
+            >
+              {query.trim() ? (
+                <>
+                  <Search className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-30" />
+                  <p className="text-muted-foreground">No commands found</p>
+                  <p className="text-sm text-muted-foreground/70 mt-1">
+                    Try searching for "grep", "docker", "ssh", or "tcpdump"
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Zap className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-30" />
+                  <p className="text-muted-foreground">No recent commands</p>
+                  <p className="text-sm text-muted-foreground/70 mt-1">
+                    Start typing to search for Linux commands
+                  </p>
+                </>
+              )}
+            </div>
+          ))}{" "}
+        {/* 💡 The closing brace was missing after the conditional expression */}
         {/* Footer */}
         <div
           className={

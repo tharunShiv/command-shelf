@@ -10,6 +10,13 @@ import {
 } from "electron";
 import { join } from "path";
 
+const {
+  initDb,
+  updateCommands,
+  getAllCommands,
+  getLocalDataVersion,
+} = require("./db");
+
 // We compile to CJS, __dirname is available
 
 let mainWindow: BrowserWindow | null = null;
@@ -18,6 +25,75 @@ let tray: Tray | null = null;
 
 const isDev =
   process.env.VITE_DEV_SERVER_URL || process.env.NODE_ENV === "development";
+
+// ----------------------------------------------------------------------
+// 💡 NEW: DATABASE AND SYNC SETUP LOGIC
+// ----------------------------------------------------------------------
+
+async function setupDatabaseAndSync() {
+  try {
+    await initDb();
+    console.log(
+      `MAIN PROCESS: Local command data version: ${getLocalDataVersion()}`
+    );
+
+    // 1. Check for remote updates
+    // 💡 CHANGE THIS URL to your actual GitHub raw link!
+    const VERSION_URL =
+      "https://raw.githubusercontent.com/tharunShiv/command-helper-data-source/refs/heads/main/commands_version.json";
+
+    console.log(
+      `MAIN PROCESS: Attempting to fetch version from: ${VERSION_URL}`
+    );
+    const response = await fetch(VERSION_URL);
+
+    if (!response.ok) {
+      console.warn(
+        `MAIN PROCESS: Failed to fetch version from GitHub: ${response.status}. Using local data.`
+      );
+      return;
+    }
+
+    const remoteVersion = await response.json();
+
+    console.log(
+      `MAIN PROCESS: Remote version found: ${remoteVersion.latestVersion}, Data URL: ${remoteVersion.dataUrl}`
+    );
+
+    if (remoteVersion.latestVersion > getLocalDataVersion()) {
+      console.log(
+        `MAIN PROCESS: New version found: ${remoteVersion.latestVersion}. Starting download...`
+      );
+
+      // 2. Download full command data
+      const dataResponse = await fetch(remoteVersion.dataUrl);
+
+      if (!dataResponse.ok) {
+        console.error(
+          `MAIN PROCESS: Failed to download full data from GitHub: ${dataResponse.status}`
+        );
+        return;
+      }
+
+      const newCommands = await dataResponse.json();
+
+      // 💥 DEBUG LOG D: Confirm data was downloaded successfully
+      console.log(
+        `MAIN PROCESS: ✅ Downloaded ${newCommands.length} command objects.`
+      );
+
+      // 3. Update local database
+      await updateCommands(newCommands);
+    } else {
+      console.log("MAIN PROCESS: Local command data is up to date.");
+    }
+  } catch (error) {
+    console.error(
+      "MAIN PROCESS: Failed to initialize DB or sync commands:",
+      error
+    );
+  }
+}
 
 function createMainWindow() {
   console.log("createMainWindow called");
@@ -315,8 +391,32 @@ function registerShortcuts() {
   });
 }
 
-app.whenReady().then(() => {
+ipcMain.handle("get-all-commands", async () => {
+  // 💥 CRUCIAL LOG: This confirms the Main Process received the request.
+  console.log(
+    "MAIN PROCESS: 🚀 Received 'get-all-commands' request. Fetching data..."
+  );
+
+  try {
+    const commands = await getAllCommands();
+    console.log(`MAIN PROCESS: ✅ Returning ${commands.length} commands.`);
+    return commands;
+  } catch (error) {
+    console.error(
+      "MAIN PROCESS: ❌ Error during DB fetch (check db.js):",
+      error
+    );
+    return [];
+  }
+});
+
+app.whenReady().then(async () => {
+  // 💡 CHANGE: Must be async now
   console.log("App is ready.");
+
+  // 💡 NEW: Run DB setup and sync first, awaiting completion
+  await setupDatabaseAndSync();
+
   createMainWindow();
   createPopupWindow();
   createTray();

@@ -13,6 +13,7 @@ node_modules/
 
 # Build outputs
 dist/
+dist-electron/
 dist-ssr/
 build/ # If you use a custom build directory name
 
@@ -28,3 +29,5 @@ build/ # If you use a custom build directory name
 *.njsproj
 *.sln
 *.sw? # Vim swap files
+venv-custom/
+.venv/

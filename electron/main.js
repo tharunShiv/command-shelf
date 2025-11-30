@@ -1,9 +1,62 @@
 var import_electron = require("electron");
 var import_path = require("path");
+const {
+  initDb,
+  updateCommands,
+  getAllCommands,
+  getLocalDataVersion
+} = require("./db");
 let mainWindow = null;
 let popupWindow = null;
 let tray = null;
 const isDev = process.env.VITE_DEV_SERVER_URL || process.env.NODE_ENV === "development";
+async function setupDatabaseAndSync() {
+  try {
+    await initDb();
+    console.log(
+      `MAIN PROCESS: Local command data version: ${getLocalDataVersion()}`
+    );
+    const VERSION_URL = "https://raw.githubusercontent.com/tharunShiv/command-helper-data-source/refs/heads/main/commands_version.json";
+    console.log(
+      `MAIN PROCESS: Attempting to fetch version from: ${VERSION_URL}`
+    );
+    const response = await fetch(VERSION_URL);
+    if (!response.ok) {
+      console.warn(
+        `MAIN PROCESS: Failed to fetch version from GitHub: ${response.status}. Using local data.`
+      );
+      return;
+    }
+    const remoteVersion = await response.json();
+    console.log(
+      `MAIN PROCESS: Remote version found: ${remoteVersion.latestVersion}, Data URL: ${remoteVersion.dataUrl}`
+    );
+    if (remoteVersion.latestVersion > getLocalDataVersion()) {
+      console.log(
+        `MAIN PROCESS: New version found: ${remoteVersion.latestVersion}. Starting download...`
+      );
+      const dataResponse = await fetch(remoteVersion.dataUrl);
+      if (!dataResponse.ok) {
+        console.error(
+          `MAIN PROCESS: Failed to download full data from GitHub: ${dataResponse.status}`
+        );
+        return;
+      }
+      const newCommands = await dataResponse.json();
+      console.log(
+        `MAIN PROCESS: \u2705 Downloaded ${newCommands.length} command objects.`
+      );
+      await updateCommands(newCommands);
+    } else {
+      console.log("MAIN PROCESS: Local command data is up to date.");
+    }
+  } catch (error) {
+    console.error(
+      "MAIN PROCESS: Failed to initialize DB or sync commands:",
+      error
+    );
+  }
+}
 function createMainWindow() {
   console.log("createMainWindow called");
   mainWindow = new import_electron.BrowserWindow({
@@ -238,8 +291,25 @@ function registerShortcuts() {
     import_electron.globalShortcut.unregisterAll();
   });
 }
-import_electron.app.whenReady().then(() => {
+import_electron.ipcMain.handle("get-all-commands", async () => {
+  console.log(
+    "MAIN PROCESS: \u{1F680} Received 'get-all-commands' request. Fetching data..."
+  );
+  try {
+    const commands = await getAllCommands();
+    console.log(`MAIN PROCESS: \u2705 Returning ${commands.length} commands.`);
+    return commands;
+  } catch (error) {
+    console.error(
+      "MAIN PROCESS: \u274C Error during DB fetch (check db.js):",
+      error
+    );
+    return [];
+  }
+});
+import_electron.app.whenReady().then(async () => {
   console.log("App is ready.");
+  await setupDatabaseAndSync();
   createMainWindow();
   createPopupWindow();
   createTray();

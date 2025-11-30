@@ -1,16 +1,20 @@
 import { useEffect, useRef } from "react";
-import { Command } from "../data/commands";
+import { Command } from "../data/Command";
 import { CommandItem } from "./CommandItem";
 import { ScrollArea } from "./ui/scroll-area";
 
+// 💡 CHANGE: Define the Command type that CommandPalette is passing down
+type CommandWithSyntax = Command & { primarySyntax: string };
+
 interface CommandListProps {
-  commands: Command[];
+  commands: CommandWithSyntax[];
   query: string;
   selectedIndex: number;
   recentCommandIds: string[];
-  onSelect: (command: Command) => void;
+  // 💡 CHANGE: Update onSelect type
+  onSelect: (command: CommandWithSyntax) => void;
   onHover: (index: number) => void;
-  className?: string; // New prop
+  className?: string;
 }
 
 export function CommandList({
