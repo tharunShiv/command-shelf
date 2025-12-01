@@ -267,7 +267,6 @@ function createTray() {
   tray.setToolTip("Command Helper");
   console.log("Tray created and tooltip set.");
   const contextMenu = import_electron.Menu.buildFromTemplate([
-    { label: "Show Main App", click: () => mainWindow?.show() },
     { label: "Toggle Command Palette", click: () => togglePopup() },
     { type: "separator" },
     { label: "Quit", role: "quit" }

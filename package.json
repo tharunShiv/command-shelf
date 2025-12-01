@@ -1,6 +1,6 @@
 {
   "name": "commandhelper",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "private": true,
   "main": "electron/main.js",
   "dependencies": {
@@ -87,7 +87,8 @@
     "files": [
       "dist/**/*",
       "electron/*.js",
-      "electron/trayTemplate.png"
+      "electron/trayTemplate.png",
+      "electron/trayTemplate@2x.png"
     ],
     "asarUnpack": [
       "**/node_modules/better-sqlite3/**/*"
