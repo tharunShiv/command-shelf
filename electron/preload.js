@@ -7,5 +7,6 @@ import_electron.contextBridge.exposeInMainWorld("electronAPI", {
     return () => import_electron.ipcRenderer.off("focus-search", listener);
   },
   // 💥 NEW: Expose the IPC function using invoke for request/response
-  getAllCommands: () => import_electron.ipcRenderer.invoke("get-all-commands")
+  getAllCommands: () => import_electron.ipcRenderer.invoke("get-all-commands"),
+  checkForUpdates: () => import_electron.ipcRenderer.invoke("check-for-updates")
 });
