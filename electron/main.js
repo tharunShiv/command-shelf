@@ -9,6 +9,7 @@ const {
 let mainWindow = null;
 let popupWindow = null;
 let tray = null;
+let latestVersionAvailable = null;
 const isDev = process.env.VITE_DEV_SERVER_URL || process.env.NODE_ENV === "development";
 async function setupDatabaseAndSync() {
   try {
@@ -31,6 +32,15 @@ async function setupDatabaseAndSync() {
     console.log(
       `MAIN PROCESS: Remote version found: ${remoteVersion.latestVersion}, Data URL: ${remoteVersion.dataUrl}`
     );
+    let newAppVersion = null;
+    const currentAppVersion = import_electron.app.getVersion();
+    if (remoteVersion.latestAppVersion && remoteVersion.latestAppVersion !== currentAppVersion) {
+      console.log(
+        `MAIN PROCESS: New app version found: ${remoteVersion.latestAppVersion} (Current: ${currentAppVersion})`
+      );
+      newAppVersion = remoteVersion.latestAppVersion;
+      latestVersionAvailable = newAppVersion;
+    }
     if (remoteVersion.latestVersion > getLocalDataVersion()) {
       console.log(
         `MAIN PROCESS: New version found: ${remoteVersion.latestVersion}. Starting download...`
@@ -50,11 +60,13 @@ async function setupDatabaseAndSync() {
     } else {
       console.log("MAIN PROCESS: Local command data is up to date.");
     }
+    return;
   } catch (error) {
     console.error(
       "MAIN PROCESS: Failed to initialize DB or sync commands:",
       error
     );
+    return;
   }
 }
 function createMainWindow() {
@@ -74,6 +86,10 @@ function createMainWindow() {
       nodeIntegration: false,
       sandbox: true
     }
+  });
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    import_electron.shell.openExternal(url);
+    return { action: "deny" };
   });
   if (isDev) {
     const url = process.env.VITE_DEV_SERVER_URL;
@@ -98,6 +114,9 @@ function createMainWindow() {
     );
     mainWindow.on("unresponsive", () => {
       console.error("Main window became unresponsive");
+    });
+    mainWindow.webContents.on("console-message", (event, level, message, line, sourceId) => {
+      console.log(`[Renderer]: ${message}`);
     });
   } else {
     const filePath = (0, import_path.join)(__dirname, "..", "dist", "index.html");
@@ -305,6 +324,12 @@ import_electron.ipcMain.handle("get-all-commands", async () => {
     );
     return [];
   }
+});
+import_electron.ipcMain.handle("check-for-updates", () => {
+  console.log(
+    `MAIN PROCESS: Renderer checked for updates. Result: ${latestVersionAvailable}`
+  );
+  return latestVersionAvailable;
 });
 import_electron.app.whenReady().then(async () => {
   console.log("App is ready.");

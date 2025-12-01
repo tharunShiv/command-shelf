@@ -7,6 +7,7 @@ import {
   screen,
   nativeImage,
   ipcMain,
+  shell,
 } from "electron";
 import { join } from "path";
 
@@ -22,6 +23,7 @@ const {
 let mainWindow: BrowserWindow | null = null;
 let popupWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
+let latestVersionAvailable: string | null = null;
 
 const isDev =
   process.env.VITE_DEV_SERVER_URL || process.env.NODE_ENV === "development";
@@ -30,7 +32,7 @@ const isDev =
 // 💡 NEW: DATABASE AND SYNC SETUP LOGIC
 // ----------------------------------------------------------------------
 
-async function setupDatabaseAndSync() {
+async function setupDatabaseAndSync(): Promise<void> {
   try {
     await initDb();
     console.log(
@@ -60,6 +62,20 @@ async function setupDatabaseAndSync() {
       `MAIN PROCESS: Remote version found: ${remoteVersion.latestVersion}, Data URL: ${remoteVersion.dataUrl}`
     );
 
+    // Check for app update
+    let newAppVersion: string | null = null;
+    const currentAppVersion = app.getVersion();
+    if (
+      remoteVersion.latestAppVersion &&
+      remoteVersion.latestAppVersion !== currentAppVersion
+    ) {
+      console.log(
+        `MAIN PROCESS: New app version found: ${remoteVersion.latestAppVersion} (Current: ${currentAppVersion})`
+      );
+      newAppVersion = remoteVersion.latestAppVersion;
+      latestVersionAvailable = newAppVersion;
+    }
+
     if (remoteVersion.latestVersion > getLocalDataVersion()) {
       console.log(
         `MAIN PROCESS: New version found: ${remoteVersion.latestVersion}. Starting download...`
@@ -87,11 +103,14 @@ async function setupDatabaseAndSync() {
     } else {
       console.log("MAIN PROCESS: Local command data is up to date.");
     }
+
+    return;
   } catch (error) {
     console.error(
       "MAIN PROCESS: Failed to initialize DB or sync commands:",
       error
     );
+    return;
   }
 }
 
@@ -110,6 +129,12 @@ function createMainWindow() {
       nodeIntegration: false,
       sandbox: true,
     },
+  });
+
+  // Open external links in the default browser
+  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: "deny" };
   });
 
   if (isDev) {
@@ -148,6 +173,10 @@ function createMainWindow() {
     );
     mainWindow.on("unresponsive", () => {
       console.error("Main window became unresponsive");
+    });
+    // Forward renderer console logs to main process terminal
+    mainWindow.webContents.on("console-message", (event, level, message, line, sourceId) => {
+      console.log(`[Renderer]: ${message}`);
     });
   } else {
     const filePath = join(__dirname, "..", "dist", "index.html");
@@ -409,6 +438,13 @@ ipcMain.handle("get-all-commands", async () => {
   }
 });
 
+ipcMain.handle("check-for-updates", () => {
+  console.log(
+    `MAIN PROCESS: Renderer checked for updates. Result: ${latestVersionAvailable}`
+  );
+  return latestVersionAvailable;
+});
+
 app.whenReady().then(async () => {
   // 💡 CHANGE: Must be async now
   console.log("App is ready.");
@@ -420,6 +456,8 @@ app.whenReady().then(async () => {
   createPopupWindow();
   createTray();
   registerShortcuts();
+
+  // Removed push-based update logic
 
   // IPC for renderer to request popup toggle (if needed)
   ipcMain.on("toggle-popup", () => {

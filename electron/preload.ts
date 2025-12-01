@@ -11,6 +11,8 @@ interface ElectronAPI {
    * Returns a Promise that resolves to an array of Command objects.
    */
   getAllCommands: () => Promise<any[]>; // Use 'any[]' since the specific Command type is in the renderer bundle
+
+  checkForUpdates: () => Promise<string | null>;
 }
 
 // 💡 2. Update the Exposure: Add the implementation
@@ -25,4 +27,6 @@ contextBridge.exposeInMainWorld("electronAPI", {
 
   // 💥 NEW: Expose the IPC function using invoke for request/response
   getAllCommands: () => ipcRenderer.invoke("get-all-commands"),
+
+  checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
 } as ElectronAPI); // Cast to ElectronAPI to ensure types match
