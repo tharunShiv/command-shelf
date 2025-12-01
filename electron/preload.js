@@ -8,5 +8,7 @@ import_electron.contextBridge.exposeInMainWorld("electronAPI", {
   },
   // 💥 NEW: Expose the IPC function using invoke for request/response
   getAllCommands: () => import_electron.ipcRenderer.invoke("get-all-commands"),
-  checkForUpdates: () => import_electron.ipcRenderer.invoke("check-for-updates")
+  checkForUpdates: () => import_electron.ipcRenderer.invoke("check-for-updates"),
+  addCustomCommand: (command) => import_electron.ipcRenderer.invoke("add-custom-command", command),
+  deleteCustomCommand: (id) => import_electron.ipcRenderer.invoke("delete-custom-command", id)
 });

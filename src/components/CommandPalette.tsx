@@ -1,6 +1,6 @@
 // src/components/CommandPallete.tsx
 import React, { useState, useEffect, useMemo } from "react";
-import { Search, X, Zap, Loader2 } from "lucide-react"; // 💡 Added Loader2 here
+import { Search, X, Zap, Loader2, Plus } from "lucide-react"; // 💡 Added Plus here
 import { Command } from "../data/Command";
 import { searchCommands, SearchResult } from "../utils/search";
 import { copyCommandToClipboard } from "../utils/clipboard";
@@ -9,6 +9,7 @@ import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { toast } from "sonner";
 import { useCommands } from "../hooks/useCommands";
+import { AddCommandForm } from "./AddCommandForm";
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -31,10 +32,12 @@ export function CommandPalette({
 }: CommandPaletteProps) {
   console.log(`CommandPalette - isOverlay: ${isOverlay}`);
   // Get data from the hook
-  const { commands, isLoading, error } = useCommands();
+  const { commands, isLoading, error, refreshCommands } = useCommands();
 
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
+  // View state: 'list' or 'add'
+  const [view, setView] = useState<"list" | "add">("list");
 
   const allCommands = useMemo(() => commands, [commands]);
 
@@ -60,11 +63,6 @@ export function CommandPalette({
 
   // Search results
   const searchResults: SearchResult[] = useMemo(() => {
-    // 💡 DEBUG LOG 3: Check search parameters and overall command list size
-    console.log(
-      `CommandPalette: Calculating search results. Query: '${query}', All Commands: ${allCommands.length}`
-    );
-
     if (!query.trim() || isLoading) {
       return [];
     }
@@ -72,23 +70,10 @@ export function CommandPalette({
       0,
       10
     );
-
-    // 💡 DEBUG LOG 4: Check the final number of search results
-    console.log(
-      `CommandPalette: Found ${results.length} search results for query '${query}'.`
-    );
-    // 💡 DEBUG LOG 5: Log the top result's score
-    if (results.length > 0) {
-      console.log(
-        `CommandPalette: Top result score: ${results[0].score}, Name: ${results[0].name}`
-      );
-    }
-
     return results;
   }, [query, recentCommandIds, allCommands, isLoading]);
 
   // Display list: search results or recent commands
-  // 💡 CHANGE: The combined list must match the type of searchResults (Command & { primarySyntax: string })
   const displayCommands = query.trim() ? searchResults : recentCommands;
 
   // Reset selected index when results change
@@ -96,18 +81,17 @@ export function CommandPalette({
     setSelectedIndex(0);
   }, [displayCommands.length]);
 
-  // Reset query when palette opens/closes
+  // Reset query and view when palette opens/closes
   useEffect(() => {
     if (isOpen) {
       setQuery("");
       setSelectedIndex(0);
+      setView("list");
     }
   }, [isOpen]);
 
   // Handle command selection
   const handleSelectCommand = async (command: SelectableCommand) => {
-    // 💡 CHANGE: Get the syntax from the 'primarySyntax' field which is available
-    // on both SearchResult and the mapped recentCommands array.
     const syntaxToCopy =
       "primarySyntax" in command
         ? command.primarySyntax
@@ -132,7 +116,7 @@ export function CommandPalette({
 
   // Keyboard navigation
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || view === "add") return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowDown") {
@@ -154,7 +138,7 @@ export function CommandPalette({
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, displayCommands, selectedIndex, onClose]);
+  }, [isOpen, displayCommands, selectedIndex, onClose, view]);
 
   if (!isOpen) {
     return null;
@@ -188,145 +172,164 @@ export function CommandPalette({
   };
 
   return (
-    <div
-      className={
-        isOverlay
-          ? "fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center"
-          : ""
-      }
-      onClick={onClose}
-    >
+    <>
       <div
         className={
           isOverlay
-            ? "bg-card border border-border rounded-xl shadow-2xl w-full h-full max-w-2xl overflow-hidden"
-            : "flex flex-col w-full h-full"
+            ? "fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-start justify-center"
+            : ""
         }
-        onClick={(e) => e.stopPropagation()}
+        onClick={onClose}
       >
-        {/* Header */}
-        {/* ... (Header content is unchanged) ... */}
-        <div className={isOverlay ? "border-b border-border" : ""}>
-          <div
-            className={
-              isOverlay
-                ? "flex items-center gap-3 px-4 py-3"
-                : "flex items-center gap-3 p-0"
-            }
-          >
-            <Search className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-            <Input
-              type="text"
-              placeholder="Search all Linux commands"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground"
-              autoFocus
-              ref={inputRef}
-            />
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onClose}
-              className="flex-shrink-0"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          </div>
-
-          {/* Info bar */}
-          <div
-            className={
-              isOverlay
-                ? "px-4 py-2 bg-muted/30 flex items-center justify-between text-xs text-muted-foreground"
-                : "flex items-center justify-between text-xs text-muted-foreground p-0"
-            }
-          >
-            <div className="flex items-center gap-4">
-              {!query.trim() && recentCommands.length > 0 && (
-                <span className="flex items-center gap-1">
-                  <Zap className="w-3 h-3" />
-                  Recent Commands
-                </span>
-              )}
-              {query.trim() && (
-                <span>
-                  {searchResults.length} result
-                  {searchResults.length !== 1 ? "s" : ""}
-                </span>
-              )}
-            </div>
-            <div className="flex items-center gap-3">
-              <kbd className="px-1.5 py-0.5 bg-background border border-border rounded text-xs">
-                ↑↓
-              </kbd>
-              <span>Navigate</span>
-              <kbd className="px-1.5 py-0.5 bg-background border border-border rounded text-xs">
-                ⏎
-              </kbd>
-              <span>Select</span>
-              <kbd className="px-1.5 py-0.5 bg-background border border-border rounded text-xs">
-                Cmd + Shift + D
-              </kbd>
-              <span>Close</span>
-            </div>
-          </div>
-        </div>
-        {/* Results */}
-        {renderLoadingOrError() || // 💡 FIX IS HERE
-          (displayCommands.length > 0 ? (
-            // 💡 CHANGE: Pass the combined search/recent array
-            <CommandList
-              commands={
-                displayCommands as (Command & { primarySyntax: string })[]
-              }
-              query={query}
-              selectedIndex={selectedIndex}
-              recentCommandIds={recentCommandIds}
-              // 💡 CHANGE: Select must handle the new SearchResult type
-              onSelect={handleSelectCommand}
-              onHover={setSelectedIndex}
-              className={isOverlay ? "" : "flex-1"}
-            />
-          ) : (
-            <div
-              className={
-                isOverlay
-                  ? "px-4 py-12 text-center custom-height-results"
-                  : "flex-1 text-center"
-              }
-            >
-              {query.trim() ? (
-                <>
-                  <Search className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-30" />
-                  <p className="text-muted-foreground">No commands found</p>
-                  <p className="text-sm text-muted-foreground/70 mt-1">
-                    Try searching for "grep", "docker", "ssh", or "tcpdump"
-                  </p>
-                </>
-              ) : (
-                <>
-                  <Zap className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-30" />
-                  <p className="text-muted-foreground">No recent commands</p>
-                  <p className="text-sm text-muted-foreground/70 mt-1">
-                    Start typing to search for Linux commands
-                  </p>
-                </>
-              )}
-            </div>
-          ))}{" "}
-        {/* 💡 The closing brace was missing after the conditional expression */}
-        {/* Footer */}
         <div
           className={
             isOverlay
-              ? "border-t border-border px-4 py-2 bg-muted/20 text-xs text-muted-foreground text-center"
-              : "text-xs text-muted-foreground text-center p-0"
+              ? "bg-card border border-border rounded-xl shadow-2xl w-full h-full max-w-2xl overflow-hidden"
+              : "flex flex-col w-full h-full"
           }
+          onClick={(e) => e.stopPropagation()}
         >
-          Commands are prefixed with # comment for safety
+          {view === "add" ? (
+            <AddCommandForm
+              onCancel={() => setView("list")}
+              onCommandAdded={() => {
+                refreshCommands?.();
+                setView("list");
+              }}
+            />
+          ) : (
+            <>
+              {/* Header */}
+              <div className={isOverlay ? "border-b border-border" : ""}>
+                <div
+                  className={
+                    isOverlay
+                      ? "flex items-center gap-3 px-4 py-3"
+                      : "flex items-center gap-3 p-0"
+                  }
+                >
+                  <Search className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                  <Input
+                    type="text"
+                    placeholder="Search all Linux commands"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    className="flex-1 border-0 bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0 text-foreground"
+                    autoFocus={view === "list"}
+                    ref={inputRef}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setView("add")}
+                    className="flex-shrink-0"
+                    title="Add Custom Command"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onClose}
+                    className="flex-shrink-0"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+
+                {/* Info bar */}
+                <div
+                  className={
+                    isOverlay
+                      ? "px-4 py-2 bg-muted/30 flex items-center justify-between text-xs text-muted-foreground"
+                      : "flex items-center justify-between text-xs text-muted-foreground p-0"
+                  }
+                >
+                  <div className="flex items-center gap-4">
+                    {!query.trim() && recentCommands.length > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Zap className="w-3 h-3" />
+                        Recent Commands
+                      </span>
+                    )}
+                    {query.trim() && (
+                      <span>
+                        {searchResults.length} result
+                        {searchResults.length !== 1 ? "s" : ""}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <kbd className="px-1.5 py-0.5 bg-background border border-border rounded text-xs">
+                      ↑↓
+                    </kbd>
+                    <span>Navigate</span>
+                    <kbd className="px-1.5 py-0.5 bg-background border border-border rounded text-xs">
+                      ⏎
+                    </kbd>
+                    <span>Select</span>
+                    <kbd className="px-1.5 py-0.5 bg-background border border-border rounded text-xs">
+                      Cmd + Shift + D
+                    </kbd>
+                    <span>Close</span>
+                  </div>
+                </div>
+              </div>
+              {/* Results */}
+              {renderLoadingOrError() ||
+                (displayCommands.length > 0 ? (
+                  <CommandList
+                    commands={
+                      displayCommands as (Command & { primarySyntax: string })[]
+                    }
+                    query={query}
+                    selectedIndex={selectedIndex}
+                    recentCommandIds={recentCommandIds}
+                    onSelect={handleSelectCommand}
+                    onHover={setSelectedIndex}
+                    className={isOverlay ? "" : "flex-1"}
+                  />
+                ) : (
+                  <div
+                    className={
+                      isOverlay
+                        ? "px-4 py-12 text-center custom-height-results"
+                        : "flex-1 text-center"
+                    }
+                  >
+                    {query.trim() ? (
+                      <>
+                        <Search className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-30" />
+                        <p className="text-muted-foreground">No commands found</p>
+                        <p className="text-sm text-muted-foreground/70 mt-1">
+                          Try searching for "grep", "docker", "ssh", or "tcpdump"
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="w-12 h-12 text-muted-foreground mx-auto mb-3 opacity-30" />
+                        <p className="text-muted-foreground">No recent commands</p>
+                        <p className="text-sm text-muted-foreground/70 mt-1">
+                          Start typing to search for Linux commands
+                        </p>
+                      </>
+                    )}
+                  </div>
+                ))}
+              {/* Footer */}
+              <div
+                className={
+                  isOverlay
+                    ? "border-t border-border px-4 py-2 bg-muted/20 text-xs text-muted-foreground text-center"
+                    : "text-xs text-muted-foreground text-center p-0"
+                }
+              >
+                Commands are prefixed with # comment for safety
+              </div>
+            </>
+          )}
         </div>
       </div>
-    </div>
+    </>
   );
 }

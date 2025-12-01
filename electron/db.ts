@@ -49,6 +49,19 @@ export async function initDb() {
       );
     `);
 
+    // Create the custom_commands table
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS custom_commands (
+        id TEXT PRIMARY KEY,
+        name TEXT,
+        platform TEXT,
+        category TEXT,
+        tags TEXT,
+        variations_json TEXT,
+        created_at INTEGER
+      );
+    `);
+
     // Get the current local data version from the highest version number in the table
     const result = db.prepare("SELECT MAX(version) as maxVersion FROM commands").get() as { maxVersion: number };
     localDataVersion = result?.maxVersion || 0;
@@ -118,7 +131,7 @@ export async function getAllCommands(): Promise<Command[]> {
   }
 
   const rows = db.prepare("SELECT * FROM commands").all() as any[];
-  console.log(`DB: Found ${rows.length} rows for getAllCommands.`);
+  console.log(`DB: Found ${rows.length} standard commands.`);
 
   return rows.map((row) => ({
     id: row.id,
@@ -131,6 +144,75 @@ export async function getAllCommands(): Promise<Command[]> {
     variations: JSON.parse(row.variations_json),
     version: row.version,
   })) as Command[];
+}
+
+/**
+ * Adds a new custom command to the database.
+ */
+export async function addCustomCommand(command: Command): Promise<void> {
+  if (!db) await initDb();
+
+  try {
+    const insert = db.prepare(`
+      INSERT INTO custom_commands (id, name, platform, category, tags, variations_json, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    const variationsJson = JSON.stringify(command.variations || []);
+    const tagsString = Array.isArray(command.tags)
+      ? command.tags.join(",")
+      : command.tags || "";
+
+    insert.run(
+      command.id,
+      command.name,
+      command.platform,
+      command.category,
+      tagsString,
+      variationsJson,
+      Date.now()
+    );
+    console.log(`DB: Added custom command: ${command.name}`);
+  } catch (error) {
+    console.error("DB: Failed to add custom command:", error);
+    throw error;
+  }
+}
+
+/**
+ * Fetches all custom commands.
+ */
+export async function getCustomCommands(): Promise<Command[]> {
+  if (!db) await initDb();
+
+  const rows = db.prepare("SELECT * FROM custom_commands").all() as any[];
+  console.log(`DB: Found ${rows.length} custom commands.`);
+
+  return rows.map((row) => ({
+    id: row.id,
+    name: row.name,
+    platform: row.platform,
+    category: row.category,
+    tags: row.tags ? row.tags.split(",") : [],
+    variations: JSON.parse(row.variations_json),
+    version: 0, // Custom commands don't track version sync
+    isCustom: true // Flag to identify custom commands in UI
+  })) as Command[];
+}
+
+/**
+ * Deletes a custom command by ID.
+ */
+export async function deleteCustomCommand(id: string): Promise<void> {
+  if (!db) await initDb();
+  
+  try {
+    db.prepare("DELETE FROM custom_commands WHERE id = ?").run(id);
+    console.log(`DB: Deleted custom command: ${id}`);
+  } catch (error) {
+    console.error("DB: Failed to delete custom command:", error);
+    throw error;
+  }
 }
 
 /**

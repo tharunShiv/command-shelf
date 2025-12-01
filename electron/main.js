@@ -4,7 +4,10 @@ const {
   initDb,
   updateCommands,
   getAllCommands,
-  getLocalDataVersion
+  getLocalDataVersion,
+  addCustomCommand,
+  getCustomCommands,
+  deleteCustomCommand
 } = require("./db");
 let mainWindow = null;
 let popupWindow = null;
@@ -314,15 +317,39 @@ import_electron.ipcMain.handle("get-all-commands", async () => {
     "MAIN PROCESS: \u{1F680} Received 'get-all-commands' request. Fetching data..."
   );
   try {
-    const commands = await getAllCommands();
-    console.log(`MAIN PROCESS: \u2705 Returning ${commands.length} commands.`);
-    return commands;
+    const [standardCommands, customCommands] = await Promise.all([
+      getAllCommands(),
+      getCustomCommands()
+    ]);
+    const allCommands = [...customCommands, ...standardCommands];
+    console.log(`MAIN PROCESS: \u2705 Returning ${allCommands.length} commands (${customCommands.length} custom).`);
+    return allCommands;
   } catch (error) {
     console.error(
       "MAIN PROCESS: \u274C Error during DB fetch (check db.js):",
       error
     );
     return [];
+  }
+});
+import_electron.ipcMain.handle("add-custom-command", async (event, command) => {
+  console.log("MAIN PROCESS: Adding custom command:", command.name);
+  try {
+    await addCustomCommand(command);
+    return { success: true };
+  } catch (error) {
+    console.error("MAIN PROCESS: Failed to add custom command:", error);
+    return { success: false, error: String(error) };
+  }
+});
+import_electron.ipcMain.handle("delete-custom-command", async (event, id) => {
+  console.log("MAIN PROCESS: Deleting custom command:", id);
+  try {
+    await deleteCustomCommand(id);
+    return { success: true };
+  } catch (error) {
+    console.error("MAIN PROCESS: Failed to delete custom command:", error);
+    return { success: false, error: String(error) };
   }
 });
 import_electron.ipcMain.handle("check-for-updates", () => {
