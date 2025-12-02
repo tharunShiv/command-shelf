@@ -10,6 +10,8 @@ import { Button } from "./ui/button";
 import { toast } from "sonner";
 import { useCommands } from "../hooks/useCommands";
 import { AddCommandForm } from "./AddCommandForm";
+import { VariationList } from "./VariationList";
+import { CommandVariant } from "../data/Command";
 
 interface CommandPaletteProps {
   isOpen: boolean;
@@ -36,8 +38,9 @@ export function CommandPalette({
 
   const [query, setQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(0);
-  // View state: 'list' or 'add'
-  const [view, setView] = useState<"list" | "add">("list");
+  // View state: 'list', 'add', or 'variations'
+  const [view, setView] = useState<"list" | "add" | "variations">("list");
+  const [selectedCommand, setSelectedCommand] = useState<Command | null>(null);
 
   const allCommands = useMemo(() => commands, [commands]);
 
@@ -87,22 +90,29 @@ export function CommandPalette({
       setQuery("");
       setSelectedIndex(0);
       setView("list");
+      setSelectedCommand(null);
     }
   }, [isOpen]);
 
   // Handle command selection
-  const handleSelectCommand = async (command: SelectableCommand) => {
-    const syntaxToCopy =
-      "primarySyntax" in command
-        ? command.primarySyntax
-        : (command.variations.find((v) => v.isPrimary) || command.variations[0])
-            ?.syntax || command.name;
+  const handleSelectCommand = (command: SelectableCommand) => {
+    if ("primarySyntax" in command) {
+      // It's a Command object (either from search or recent)
+      setSelectedCommand(command);
+      setView("variations");
+      setSelectedIndex(0);
+      setQuery(""); // Clear query when entering variations view
+    }
+  };
+
+  const handleSelectVariation = async (variation: CommandVariant) => {
+    if (!selectedCommand) return;
 
     try {
-      await copyCommandToClipboard(syntaxToCopy, command.name);
-      onCommandUsed(command.id);
+      await copyCommandToClipboard(variation.syntax, selectedCommand.name);
+      onCommandUsed(selectedCommand.id);
       toast.success("Command copied to clipboard!", {
-        description: `${command.name} - Ready to paste`,
+        description: `${selectedCommand.name} - Ready to paste`,
         duration: 2000,
       });
       onClose();
@@ -114,31 +124,55 @@ export function CommandPalette({
     }
   };
 
+  const handleBack = () => {
+    setView("list");
+    setSelectedCommand(null);
+    setSelectedIndex(0);
+    // Optional: Restore previous query if we wanted to be fancy, but clearing is fine for now
+  };
+
   // Keyboard navigation
   useEffect(() => {
     if (!isOpen || view === "add") return;
+
+    const currentListLength =
+      view === "variations" && selectedCommand
+        ? selectedCommand.variations.length
+        : displayCommands.length;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowDown") {
         e.preventDefault();
         setSelectedIndex((prev) =>
-          prev < displayCommands.length - 1 ? prev + 1 : prev
+          prev < currentListLength - 1 ? prev + 1 : prev
         );
       } else if (e.key === "ArrowUp") {
         e.preventDefault();
         setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
-      } else if (e.key === "Enter" && displayCommands.length > 0) {
+      } else if (e.key === "Enter" && currentListLength > 0) {
         e.preventDefault();
-        handleSelectCommand(displayCommands[selectedIndex]);
+        if (view === "variations" && selectedCommand) {
+          handleSelectVariation(selectedCommand.variations[selectedIndex]);
+        } else {
+          handleSelectCommand(displayCommands[selectedIndex]);
+        }
       } else if (e.key === "Escape") {
         e.preventDefault();
-        onClose();
+        if (view === "variations") {
+          handleBack();
+        } else {
+          onClose();
+        }
+      } else if (e.key === "Backspace" && query === "" && view === "variations") {
+        // Allow backspace to go back if query is empty
+        e.preventDefault();
+        handleBack();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, displayCommands, selectedIndex, onClose, view]);
+  }, [isOpen, displayCommands, selectedIndex, onClose, view, selectedCommand, query]);
 
   if (!isOpen) {
     return null;
@@ -196,6 +230,17 @@ export function CommandPalette({
                 refreshCommands?.();
                 setView("list");
               }}
+            />
+          ) : view === "variations" && selectedCommand ? (
+            <VariationList
+              variations={selectedCommand.variations}
+              commandName={selectedCommand.name}
+              query={query}
+              selectedIndex={selectedIndex}
+              onSelect={handleSelectVariation}
+              onBack={handleBack}
+              onHover={setSelectedIndex}
+              className={isOverlay ? "" : "flex-1"}
             />
           ) : (
             <>
