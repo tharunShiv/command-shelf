@@ -93,7 +93,7 @@ export function AddCommandForm({ onCancel, onCommandAdded }: AddCommandFormProps
       </div>
       
       <div className="flex-1 overflow-y-auto p-3 min-h-0" style={{ height: 'calc(100% - 150px)' , overflowY: 'auto' }}>
-        <form id="add-command-form" onSubmit={handleSubmit} className="grid gap-6">
+        <form id="add-command-form" onSubmit={handleSubmit} className="grid gap-5">
           <div className="grid gap-2">
             <Label htmlFor="name" className="text-sm font-medium">Name</Label>
             <Input
