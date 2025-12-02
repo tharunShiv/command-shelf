@@ -13,6 +13,8 @@ interface ElectronAPI {
   getAllCommands: () => Promise<any[]>; // Use 'any[]' since the specific Command type is in the renderer bundle
 
   checkForUpdates: () => Promise<string | null>;
+  addCustomCommand: (command: any) => Promise<{ success: boolean; error?: string }>;
+  deleteCustomCommand: (id: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 // 💡 2. Update the Exposure: Add the implementation
@@ -29,4 +31,7 @@ contextBridge.exposeInMainWorld("electronAPI", {
   getAllCommands: () => ipcRenderer.invoke("get-all-commands"),
 
   checkForUpdates: () => ipcRenderer.invoke("check-for-updates"),
+
+  addCustomCommand: (command: any) => ipcRenderer.invoke("add-custom-command", command),
+  deleteCustomCommand: (id: string) => ipcRenderer.invoke("delete-custom-command", id),
 } as ElectronAPI); // Cast to ElectronAPI to ensure types match

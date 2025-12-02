@@ -16,6 +16,9 @@ const {
   updateCommands,
   getAllCommands,
   getLocalDataVersion,
+  addCustomCommand,
+  getCustomCommands,
+  deleteCustomCommand,
 } = require("./db");
 
 // We compile to CJS, __dirname is available
@@ -426,15 +429,42 @@ ipcMain.handle("get-all-commands", async () => {
   );
 
   try {
-    const commands = await getAllCommands();
-    console.log(`MAIN PROCESS: ✅ Returning ${commands.length} commands.`);
-    return commands;
+    const [standardCommands, customCommands] = await Promise.all([
+      getAllCommands(),
+      getCustomCommands(),
+    ]);
+
+    const allCommands = [...customCommands, ...standardCommands];
+    console.log(`MAIN PROCESS: ✅ Returning ${allCommands.length} commands (${customCommands.length} custom).`);
+    return allCommands;
   } catch (error) {
     console.error(
       "MAIN PROCESS: ❌ Error during DB fetch (check db.js):",
       error
     );
     return [];
+  }
+});
+
+ipcMain.handle("add-custom-command", async (event, command) => {
+  console.log("MAIN PROCESS: Adding custom command:", command.name);
+  try {
+    await addCustomCommand(command);
+    return { success: true };
+  } catch (error) {
+    console.error("MAIN PROCESS: Failed to add custom command:", error);
+    return { success: false, error: String(error) };
+  }
+});
+
+ipcMain.handle("delete-custom-command", async (event, id) => {
+  console.log("MAIN PROCESS: Deleting custom command:", id);
+  try {
+    await deleteCustomCommand(id);
+    return { success: true };
+  } catch (error) {
+    console.error("MAIN PROCESS: Failed to delete custom command:", error);
+    return { success: false, error: String(error) };
   }
 });
 
