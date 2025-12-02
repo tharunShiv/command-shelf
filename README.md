@@ -201,3 +201,24 @@ Command Shelf is composed of three interconnected parts:
 *   **User** runs App -> App checks `commands_version.json`:
     *   If `latestVersion` > local version -> Downloads new commands.
     *   If `latestAppVersion` > current app version -> Notifies user of update.
+
+## 💻 Technology Stack
+
+**Core**
+*   [Electron](https://www.electronjs.org/): Cross-platform desktop app framework.
+*   [React](https://react.dev/): Library for building user interfaces.
+*   [TypeScript](https://www.typescriptlang.org/): For type-safe code.
+*   [Vite](https://vitejs.dev/): Next-generation frontend tooling.
+
+**Styling & UI**
+*   [Tailwind CSS](https://tailwindcss.com/): Utility-first CSS framework.
+*   [Radix UI](https://www.radix-ui.com/): Unstyled, accessible UI primitives.
+*   [cmdk](https://cmdk.paco.me/): Fast, composable command menu React component.
+*   [Lucide React](https://lucide.dev/): Beautiful & consistent icons.
+*   [Sonner](https://sonner.emilkowal.ski/): An opinionated toast component for React.
+
+**Data & Storage**
+*   [better-sqlite3](https://github.com/WiseLibs/better-sqlite3): Fastest and simplest SQLite3 wrapper for Node.js.
+
+**Build Tools**
+*   [electron-builder](https://www.electron.build/): Complete solution to package and build a ready for distribution Electron app.
