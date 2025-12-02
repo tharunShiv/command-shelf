@@ -44,7 +44,7 @@ export function VariationItem({
             {highlightMatch(variation.syntax, query)}
           </code>
 
-          <p className="text-sm text-muted-foreground line-clamp-2">
+          <p className="text-sm text-muted-foreground font-normal line-clamp-2">
             {highlightMatch(variation.description, query)}
           </p>
         </div>
