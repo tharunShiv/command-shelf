@@ -8,17 +8,31 @@
   Command Shelf is the productivity booster you didn't know you needed. Say goodbye to forgotten commands and endless Google searches. Store, organize, and access your essential terminal commands instantly, right from your menu bar. It's not just a cheat sheet; it's your personal command center.
 </div>
 
+<div align="center">
+  <img src="src/components/videos/demo-command-shelf.gif" alt="Command Shelf Demo" width="100%" />
+</div>
+
 ---
 
 ## ✨ Features
 
+- **🛡️ Safety-First Pasting**: Commands paste as comments (# sudo rm...). Review syntax before you execute. Never break prod again.
 - **🚀 Instant Access**: Toggle your command palette anywhere with `Cmd+Shift+D`. It's always there when you need it, and out of your way when you don't.
 - **🔍 Smart Search**: Find the exact command you need in milliseconds. No more scrolling through history.
 - **📋 One-Click Copy**: Click any command to copy it directly to your clipboard, ready to paste.
-- **🛡️ Safe Pasting**: Copied commands are automatically prefixed with `#` so you can review them before execution.
 - **🎨 Beautiful UI**: A modern, dark-mode interface that looks right at home on your Mac.
 - **☁️ Auto-Sync**: Keeps your command library up-to-date automatically.
 - **➕ Custom Commands**: Add your own frequently used snippets and scripts.
+
+---
+
+## 📸 Demos
+
+### Adding a Command
+![Adding a Command](src/components/videos/demo-add-command.gif)
+
+### Adding a Script
+![Adding a Script](src/components/videos/demo-add-script.gif)
 
 ---
 
@@ -36,9 +50,9 @@ brew tap tharunShiv/homebrew-cs
 brew install --cask command-shelf
 ```
 
-### ⚠️ "App is Damaged" / "Cannot be opened" Error
+### ⚠️ MacOS Gatekeeper Warning
 
-Since this app is not notarized by Apple yet, macOS may block it. To fix this, run:
+Since this is an open-source tool not yet signed by Apple ($100/yr), macOS may flag it. You can safely bypass this with:
 
 ```bash
 xattr -cr "/Applications/Command Shelf.app"
