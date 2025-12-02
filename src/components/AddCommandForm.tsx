@@ -83,7 +83,7 @@ export function AddCommandForm({ onCancel, onCommandAdded }: AddCommandFormProps
   return (
     <div className="flex flex-col h-full bg-card text-card-foreground overflow-hidden">
       <div 
-        className="flex items-center gap-2 px-6 border-b border-border shrink-0"
+        className="flex items-center gap-2 px-3 border-b border-border shrink-0"
         style={{ height: '50px' }}
       >
         <Button variant="ghost" size="icon" onClick={onCancel} className="h-8 w-8">
@@ -92,7 +92,7 @@ export function AddCommandForm({ onCancel, onCommandAdded }: AddCommandFormProps
         <h2 className="text-base font-semibold">Add Custom Command</h2>
       </div>
       
-      <div className="flex-1 overflow-y-auto p-6 min-h-0">
+      <div className="flex-1 overflow-y-auto p-3 min-h-0" style={{ height: 'calc(100% - 150px)' , overflowY: 'auto' }}>
         <form id="add-command-form" onSubmit={handleSubmit} className="grid gap-6">
           <div className="grid gap-2">
             <Label htmlFor="name" className="text-sm font-medium">Name</Label>
@@ -102,7 +102,7 @@ export function AddCommandForm({ onCancel, onCommandAdded }: AddCommandFormProps
               onChange={(e) => setName(e.target.value)}
               placeholder="e.g., My Script"
               autoFocus
-              className="h-10"
+              className="h-10 bg-muted/50 border-muted placeholder:text-muted-foreground"
             />
           </div>
           <div className="grid gap-2">
@@ -112,7 +112,7 @@ export function AddCommandForm({ onCancel, onCommandAdded }: AddCommandFormProps
               value={syntax}
               onChange={(e) => setSyntax(e.target.value)}
               placeholder="./myscript.sh --flag"
-              className="font-mono text-sm min-h-[120px] resize-none"
+              className="font-mono text-sm min-h-[60px] resize-none bg-muted/50 border-muted placeholder:text-muted-foreground"
             />
           </div>
           <div className="grid gap-2">
@@ -122,7 +122,7 @@ export function AddCommandForm({ onCancel, onCommandAdded }: AddCommandFormProps
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="What does this command do?"
-              className="h-10"
+              className="h-10 bg-muted/50 border-muted placeholder:text-muted-foreground"
             />
           </div>
           <div className="grid gap-2">
@@ -132,15 +132,15 @@ export function AddCommandForm({ onCancel, onCommandAdded }: AddCommandFormProps
               value={tags}
               onChange={(e) => setTags(e.target.value)}
               placeholder="script, custom, automation"
-              className="h-10"
+              className="h-10 bg-muted/50 border-muted placeholder:text-muted-foreground"
             />
           </div>
         </form>
       </div>
 
       <div 
-        className="px-6 border-t border-border flex justify-end items-center gap-3 bg-muted/20 shrink-0"
-        style={{ height: '100px' }}
+        className="px-3 border-t border-border flex justify-end items-center gap-3 bg-muted/20 shrink-0"
+        style={{ height: '70px' }}
       >
         <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting} className="h-10 px-4">
           Cancel

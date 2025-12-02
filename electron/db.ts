@@ -23,9 +23,7 @@ let localDataVersion = 0; // Tracks the current version of the data in the datab
  * Initializes the SQLite database connection and creates the necessary table.
  */
 export async function initDb() {
-  const dbPath = app.isPackaged
-    ? join(process.resourcesPath, "commands.sqlite")
-    : join(process.cwd(), "commands.sqlite");
+  const dbPath = join(app.getPath("userData"), "commands.sqlite");
     
   console.log(`DB: Initializing SQLite database at: ${dbPath}`);
 

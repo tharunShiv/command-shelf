@@ -5,7 +5,7 @@ import { Terminal, Copy, Clock } from "lucide-react";
 type CommandWithSyntax = Command & { primarySyntax: string };
 
 interface CommandItemProps {
-  command: Command;
+  command: CommandWithSyntax;
   query: string;
   isSelected: boolean;
   isRecent: boolean;
@@ -45,7 +45,7 @@ export function CommandItem({
 
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <code className="text-sm font-mono text-primary">
+            <code className="text-sm font-mono font-normal text-primary">
               {highlightMatch(command.name, query)}
             </code>
             <span className="text-xs text-muted-foreground px-2 py-0.5 bg-muted rounded">
@@ -54,7 +54,7 @@ export function CommandItem({
             </span>
           </div>
 
-          <code className="block text-xs font-mono text-foreground/80 mb-2 break-all">
+          <code className="block text-xs font-mono font-normal text-foreground/80 mb-2 break-all">
             {/* 💡 CHANGE: Use the new primarySyntax field */}
             {highlightMatch(command.primarySyntax, query)}
           </code>

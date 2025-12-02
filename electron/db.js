@@ -42,7 +42,7 @@ var import_electron = require("electron");
 let db;
 let localDataVersion = 0;
 async function initDb() {
-  const dbPath = import_electron.app.isPackaged ? (0, import_path.join)(process.resourcesPath, "commands.sqlite") : (0, import_path.join)(process.cwd(), "commands.sqlite");
+  const dbPath = (0, import_path.join)(import_electron.app.getPath("userData"), "commands.sqlite");
   console.log(`DB: Initializing SQLite database at: ${dbPath}`);
   try {
     db = new import_better_sqlite3.default(dbPath);
