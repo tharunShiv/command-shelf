@@ -263,13 +263,12 @@ function togglePopup() {
 }
 function createTray() {
   console.log("createTray called");
-  const trayIconPath = (0, import_path.join)(__dirname, "trayTemplate.png");
+  const trayIconPath = (0, import_path.join)(__dirname, "trayIcon.png");
   let image;
   console.log(`Attempting to load tray icon from: ${trayIconPath}`);
   try {
     image = import_electron.nativeImage.createFromPath(trayIconPath);
     if (image && !image.isEmpty()) {
-      image.setTemplateImage(true);
       console.log("Tray icon loaded successfully.");
     } else {
       console.warn(
@@ -286,7 +285,7 @@ function createTray() {
     image = import_electron.nativeImage.createEmpty();
   }
   tray = new import_electron.Tray(image);
-  tray.setToolTip("Command Helper");
+  tray.setToolTip("Command Shelf");
   console.log("Tray created and tooltip set.");
   const contextMenu = import_electron.Menu.buildFromTemplate([
     { label: "Toggle Command Palette", click: () => togglePopup() },

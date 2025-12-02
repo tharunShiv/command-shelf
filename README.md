@@ -1,4 +1,4 @@
-# Command Helper
+# Command Shelf
 
 A Command Cheat Sheet application. .
 
@@ -8,14 +8,14 @@ A Command Cheat Sheet application. .
 
 ## 🚀 Installation (via Homebrew)
 
-To install Command Helper, run the following commands in your terminal:
+To install Command Shelf, run the following commands in your terminal:
 
 ```bash
 # 1. Add the custom tap
 brew tap tharunShiv/homebrew-ch
 
 # 2. Install the app
-brew install --cask command-helper
+brew install --cask command-shelf
 ```
 
 ### ⚠️ "App is Damaged" / "Cannot be opened" Error
@@ -23,7 +23,7 @@ brew install --cask command-helper
 Since this app is not notarized by Apple yet, macOS may block it. To fix this, run:
 
 ```bash
-xattr -cr "/Applications/Command Helper.app"
+xattr -cr "/Applications/Command Shelf.app"
 ```
 
 ## 🎮 How to Use
@@ -42,13 +42,13 @@ If a new version is released, update your local copy by running:
 brew update
 
 # 2. Upgrade the app
-brew upgrade command-helper
+brew upgrade command-shelf
 ```
 
 ## �️ Uninstallation
 
 ```bash
-brew uninstall --cask command-helper
+brew uninstall --cask command-shelf
 ```
 
 ---
@@ -88,7 +88,7 @@ rm -rf node_modules dist electron/*.js && npm cache clean --force
 
 ### Step 1: Create a Release
 1.  Build the new `.dmg` file.
-2.  Create a new Release on the [GitHub Repository](https://github.com/tharunShiv/command-helper).
+2.  Create a new Release on the [GitHub Repository](https://github.com/tharunShiv/command-shelf).
 3.  Upload the `.dmg` as an asset.
 4.  Copy the download link of the new `.dmg`.
 
@@ -99,7 +99,7 @@ curl -L <NEW_DMG_URL> | shasum -a 256
 ```
 
 ### Step 3: Update the Cask
-1.  Open `Casks/command-helper.rb` in the homebrew tap repository.
+1.  Open `Casks/command-shelf.rb` in the homebrew tap repository.
 2.  Update the `version` number.
 3.  Update the `sha256` string.
 4.  **Important:** Ensure the `url` logic matches the new filename.
@@ -107,6 +107,6 @@ curl -L <NEW_DMG_URL> | shasum -a 256
 ### Step 4: Push Changes
 ```bash
 git add .
-git commit -m "Upgrade command-helper to vX.X.X"
+git commit -m "Upgrade command-shelf to vX.X.X"
 git push
 ```

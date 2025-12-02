@@ -364,14 +364,14 @@ function togglePopup() {
 
 function createTray() {
   console.log("createTray called");
-  const trayIconPath = join(__dirname, "trayTemplate.png");
+  const trayIconPath = join(__dirname, "trayIcon.png");
   let image: Electron.NativeImage | undefined;
   console.log(`Attempting to load tray icon from: ${trayIconPath}`);
 
   try {
     image = nativeImage.createFromPath(trayIconPath);
     if (image && !image.isEmpty()) {
-      image.setTemplateImage(true); // Adapts to light/dark menu bar
+      // image.setTemplateImage(true); // Adapts to light/dark menu bar
       console.log("Tray icon loaded successfully.");
     } else {
       console.warn(
@@ -391,7 +391,7 @@ function createTray() {
   }
 
   tray = new Tray(image);
-  tray.setToolTip("Command Helper");
+  tray.setToolTip("Command Shelf");
   console.log("Tray created and tooltip set.");
 
   const contextMenu = Menu.buildFromTemplate([

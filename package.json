@@ -1,6 +1,6 @@
 {
-  "name": "commandhelper",
-  "version": "1.4.1",
+  "name": "commandshelf",
+  "version": "1.5.0",
   "private": true,
   "main": "electron/main.js",
   "dependencies": {
@@ -81,16 +81,16 @@
     "dist": "npm run build && electron-builder --mac dmg"
   },
   "build": {
-    "appId": "com.commandhelper.app",
-    "productName": "Command Helper",
+    "appId": "com.commandshelf.app",
+    "productName": "Command Shelf",
     "directories": {
       "output": "dist-electron"
     },
     "files": [
       "dist/**/*",
       "electron/*.js",
-      "electron/trayTemplate.png",
-      "electron/trayTemplate@2x.png"
+      "electron/trayIcon.png",
+      "electron/trayIcon@2x.png"
     ],
     "asarUnpack": [
       "**/node_modules/better-sqlite3/**/*"
