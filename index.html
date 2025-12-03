@@ -1,13 +1,102 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Command Shelf</title>
-  </head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Command Shelf - Your Ultimate Command Line Companion</title>
+    <meta name="description" content="Store, organize, and access your essential terminal commands instantly, right from your menu bar.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
 
-  <body>
-    <div id="root"></div>
-    <script type="module" src="src/main.tsx"></script>
-  </body>
+    <header>
+        <div class="container">
+            <nav>
+                <div class="logo">Command Shelf</div>
+                <div class="nav-links">
+                    <a href="https://github.com/tharunShiv/command-shelf" target="_blank">GitHub</a>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="container">
+            <h1>Your Ultimate<br>Command Line Companion</h1>
+            <p>Store, organize, and access your essential terminal commands instantly, right from your menu bar. Say goodbye to forgotten commands.</p>
+            
+            <div class="hero-install-container">
+                <div class="code-box hero-code">
+                    <code>brew tap tharunShiv/homebrew-cs<br>brew install --cask command-shelf</code>
+                    <button class="copy-btn" onclick="navigator.clipboard.writeText('brew tap tharunShiv/homebrew-cs && brew install --cask command-shelf')">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    </button>
+                </div>
+                <div class="hero-note">
+                    <small>⚠️ macOS Gatekeeper: Run <code>xattr -cr "/Applications/Command Shelf.app"</code> if flagged.</small>
+                </div>
+            </div>
+
+            <div class="hero-video">
+                <iframe width="560" height="315" src="https://www.youtube-nocookie.com/embed/TT8l7eHHQzo?si=q1fJjTuGqkZ5KEJq" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            </div>
+
+            <div class="cta-group">
+                <a href="https://github.com/tharunShiv/command-shelf" class="btn btn-primary" target="_blank">
+                    View on GitHub
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="features">
+        <div class="container">
+            <h2 class="section-title">Why Command Shelf?</h2>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <span class="feature-icon">🛡️</span>
+                    <h3>Safety-First Pasting</h3>
+                    <p>Commands paste as comments (# sudo rm...). Review syntax before you execute. Never break prod again.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🚀</span>
+                    <h3>Instant Access</h3>
+                    <p>Toggle your command palette anywhere with Cmd+Shift+D. Always there when you need it.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">🔍</span>
+                    <h3>Smart Search</h3>
+                    <p>Find the exact command you need in milliseconds. No more scrolling through history.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">📋</span>
+                    <h3>One-Click Copy</h3>
+                    <p>Click any command ( or hit Enter ) to copy it directly to your clipboard, ready to paste.</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">☁️</span>
+                    <h3>Auto-Sync</h3>
+                    <p>Keeps your command library up-to-date automatically with regular updates from the Command Shelf team</p>
+                </div>
+                <div class="feature-card">
+                    <span class="feature-icon">➕</span>
+                    <h3>Custom Commands</h3>
+                    <p>Add your own frequently used snippets and scripts to personalize your workflow.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Command Shelf. Open source and built with ❤️.</p>
+            <br>
+            <a href="https://github.com/tharunShiv/command-shelf" target="_blank">GitHub Repository</a>
+        </div>
+    </footer>
+
+</body>
 </html>
